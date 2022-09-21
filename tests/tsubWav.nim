@@ -1,10 +1,9 @@
 
 import utils
-import std/strformat
+import std/[unittest, strformat]
 
-testclass "wav"
 
-dtest "wav -s":
+test "wav -s":
     const badSongMsg = "Error: invalid song index\n"
     withInitHelper("wav module -i:-1"):
         check:
@@ -20,7 +19,7 @@ dtest "wav -s":
             app.output == ""
             app.subcmdConfig.wavConfig.song == 3
 
-dtest "wav -o":
+test "wav -o":
     const testfilename = "blah.wav"
     for opt in ["-o", "--output"]:
         withInitHelper(&"wav module {opt}:{testfilename}"):

@@ -1,9 +1,8 @@
 
 import utils
+import std/unittest
 
-testclass "shortcircuit"
-
-dtest "-h, --help":
+test "-h, --help":
     for helpopt in ["-h", "--help"]:
         withInitHelper(helpopt):
             check:
@@ -17,7 +16,7 @@ dtest "-h, --help":
             app.shortCircuit == shortHelp
             app.subcmd == some(scWav)
 
-dtest "-v, --version":
+test "-v, --version":
     for versopt in ["-v", "--version"]:
         withInitHelper(versopt):
             check:
