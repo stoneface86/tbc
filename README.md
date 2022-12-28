@@ -10,27 +10,17 @@ formats.
 
 ## Building
 
-You will need libtrackerboy in your source path. Clone the repository and add
-this to `devconfig.nims` (developer-specific configuration, file is not tracked
-by git):
-```nim
-switch("path", "path/to/libtrackerboy-repo")
-```
-
-Or install locally via nimble:
-```sh
-nimble install https://github.com/stoneface86/libtrackerboy.git
-```
-
-Note that this is temporary, once libtrackerboy is added to the nimble package
-repository, it will be specified as a dependency in the .nimble file
-
 To build the `tbc` executable run:
 ```sh
 nimble build
 ```
 
 This will compile an executable in the `bin/` directory
+
+Or you can use `nimble run` to build and run the application:
+```sh
+nimble run -- tbcArgs...
+```
 
 ## Usage
 

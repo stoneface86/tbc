@@ -12,6 +12,7 @@ bin           = @["tbc"]
 # Dependencies
 
 requires "nim >= 1.6.0"
+requires "https://github.com/stoneface86/libtrackerboy#v0.7.1"
 
 task docs, "Generates documentation":
     exec "nim rst2html --hints:off --index:off --outdir:htmldocs docs/tbc.rst"

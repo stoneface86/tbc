@@ -41,10 +41,11 @@ type
             output*: string
 
 const
-
     subcommandNames: array[SubCommand, string] = [
         "wav"
     ]
+    
+    NimblePkgVersion {.strdefine.} = ""
 
 template writeErr(app: var Tbc, str: string): untyped =
     when isMainModule:
@@ -220,7 +221,7 @@ Command:
             result
 
     proc showVersion() =
-        echo &"Trackerboy compiler v{libVersion} [Trackerboy v{appVersion}]"
+        echo &"Trackerboy compiler v{NimblePkgVersion} [libtrackerboy v{currentVersion}]"
 
     proc showHelp(sub: Option[SubCommand]) =
         showVersion()
