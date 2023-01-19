@@ -22,19 +22,23 @@ Or you can use `nimble run` to build and run the application:
 nimble run -- tbcArgs...
 ```
 
+Replace tbcArgs with the arguments to pass to tbc, see below for details.
+
 ## Usage
 
-The application uses git style subcommand syntax, with each subcommand being
-an export format. Example:
+The application takes two arguments, the path to the `<input>` module and the
+`<format>` to convert the module to. Optional arguments can be specified in
+any order.
 
 ```sh
-tbc <command> [options]
+tbc <input> <format> [options]
 ```
 
-For help on which commands are available use the `-h` or `--help` switch:
+To see which formats are available, use the `-h`, `--help` or `--formats`
+switches:
 ```sh
 tbc -h              # general help
-tbc <command> -h    # command specific help
+tbc --formats       # only shows all available formats
 ```
 
 For more documentation see the [manual](#) (In progress, not yet available).
