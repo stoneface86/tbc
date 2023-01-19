@@ -27,6 +27,9 @@ jobs:
         with:
           nim-version: ${{ matrix.nim-version }}
 
+      - name: refresh
+        run: nimble refresh
+
       - name: check
         run: nimble check
 
