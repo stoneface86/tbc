@@ -149,6 +149,20 @@ proc main(): ExitCode =
                 else:
                     optError("-s,--song: parameter must be a number")
         
+        # --loops takes precedence over --duration
+        if opts.loops != "":
+            let parsed = maybeParseInt(opts.loops)
+            if parsed.isSome() and parsed.get() > 0:
+                cfg.duration = Duration(kind: dkLoops, amount: parsed.get())
+            else:
+                optError("-l,--loops: parameter must be a positive number")
+        elif opts.duration != "":
+            let duration = maybeParseDuration(opts.duration)
+            if duration > 0:
+                cfg.duration = Duration(kind: dkSeconds, amount: duration)
+            else:
+                optError("-t,--duration: parameter must be in format minutes:seconds or minutes and cannot be 0")
+        
         (cfg, failed) # result of the block
     
     if failed:
