@@ -10,6 +10,7 @@ on:
       - 'tests/**'
       - 'tbc.nim'
       - 'tbc.nimble'
+  workflow_dispatch:
       
 
 jobs:
@@ -32,6 +33,9 @@ jobs:
 
       - name: check
         run: nimble check
+
+      - name: build
+        run: nimble build
 
       - name: test
         run: |
