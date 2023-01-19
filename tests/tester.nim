@@ -2,5 +2,5 @@
 {.warning[UnusedImport]: off.}
 
 import 
-    tshortcircuit,
-    tsubWav
+    thelp,
+    tversion

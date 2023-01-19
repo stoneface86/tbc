@@ -1,293 +1,161 @@
-# tbc - trackerboy compiler
-# command line frontend for libtrackerboy
+# tbc - TrackerBoy Compiler
+# Usage: tbc <input> <format> [options]
 
-import std/[options, parseopt, streams, strformat, strutils]
-export options
+import std/[
+    exitprocs,
+    os,
+    sequtils,
+    strformat,
+    streams
+]
 
-import libtrackerboy/data
-import libtrackerboy/exports/wav
+import argparse
 
-# types/fields are exported solely for unit testing
+import libtrackerboy/[data, io]
+
+import tbcpkg/[
+    common,
+    configs,
+    docs,
+    formats,
+    parsing,
+    logging
+]
 
 type
-    SubCommand* = enum
-        scWav
-
-    SubCommandConfig* = object
-        case kind*: SubCommand
-        of scWav:
-            wavSeparate*: bool
-            wavConfig*: WavConfig
-
-    ShortCircuit* = enum
-        shortNone
-        shortHelp
-        shortVersion
-
-    ExitCodes* = enum
-        exitFailure = -1
+    ExitCode = enum
         exitSuccess = 0
-        exitBadArguments
-        exitFileError
-        exitModuleError
+        exitFailure = 1
+        exitBadArguments = 2
 
-    Tbc* = object
-        subcmd*: Option[SubCommand]
-        shortCircuit*: ShortCircuit
-        modulePath*: string
-        subcmdConfig*: SubCommandConfig
-        # error messages get written here instead of stderr, for unit testing
-        when not isMainModule:
-            output*: string
+template mainError(msg: string) =
+    error(msg)
+    return exitFailure
 
-const
-    subcommandNames: array[SubCommand, string] = [
-        "wav"
-    ]
-    
-    NimblePkgVersion {.strdefine.} = ""
+proc main(): ExitCode =
+    let p = newParser:
+        nohelpflag()
+        # general options
+        flag("--version", shortcircuit=true)
+        flag("-h", "--help", shortcircuit=true)
+        flag("--formats", shortcircuit=true)
+        flag("--verbose")
+        flag("--silent")
+        option("-o", "--out")
+        # song selection options
+        flag("-a", "--all")
+        option("-s", "--song", multiple=true)
+        # channel selection flags
+        flag("-1", "--ch1")
+        flag("-2", "--ch2")
+        flag("-3", "--ch3")
+        flag("-4", "--ch4")
+        # synthesized format flags
+        #flag("--mono")
+        option("-r", "--samplerate")
+        option("-l", "--loops")
+        option("-t", "--duration")
 
-template writeErr(app: var Tbc, str: string): untyped =
-    when isMainModule:
-        stderr.write str
-    else:
-        app.output.add str
+        arg("input")
+        arg("format")
 
-func maybeParseInt(str: string, bounds: Slice[int]): Option[int] =
-    var num: int
+    let opts = block:
+        try: 
+            p.parse()
+        except UsageError:
+            stderr.write(&"Usage: {Usage}\n")
+            stderr.write(getCurrentExceptionMsg())
+            stderr.write('\n')
+            return exitBadArguments
+        except ShortCircuit as e:
+            case e.flag
+            of "formats":
+                echo FormatsHelp
+            of "help":
+                echo Help
+            of "version":
+                echo VersionStr
+            return exitSuccess
+
+
+    # determine output format
+    let format = block:
+        var oFormat = parseOutputFormat(opts.format)
+        if oFormat.isNone():
+            mainError("unknown output format, see --formats or --help for available formats\n")
+        oFormat.get()
+
+    # read the input module
+    var input = Module.init()
     try:
-        num = str.parseInt()
-    except ValueError:
-        return none(int)
-    if num in bounds:
-        result = some(num)
+        let strm = openFileStream(opts.input)
+        defer: strm.close()
+        let inputError = input.deserialize(strm)
+        if inputError != frNone:
+            mainError(&"could not read module: {inputError}")
+    except IOError:
+        let errmsg = getCurrentExceptionMsg()
+        mainError(&"could not read '{opts.input}', {errmsg}")
 
-template maybeParseInt(str: string, rangeT: typedesc[range]): Option[int] =
-    maybeParseInt(str, rangeT.low.int..rangeT.high.int)
+    # make config from the parsed arguments
+    let (config, failed) = block:
+        var cfg = Config.init()
+        var failed = false
+        template optError(msg: string) =
+            error(msg)
+            failed = true
 
-func init(T: typedesc[SubCommandConfig], sub: SubCommand): T.typeOf =
-    case sub:
-    of scWav:
-        T(
-            kind: scWav,
-            wavConfig: WavConfig.init()
-        )
-
-proc parseSubcmdArg(app: var Tbc, key, val: string): bool =
-    func unrecognizedOption(opt: string): string =
-        &"Error: unrecognized option '{opt}'\n"
-    template config(): untyped = app.subcmdConfig
-    case config.kind:
-    of scWav:
-        case key:
-        of "i", "song":
-            let index = maybeParseInt(val, ByteIndex)
-            if index.isSome():
-                config.wavConfig.song = index.get()
+        cfg.input = opts.input
+        cfg.output = opts.`out`
+        if opts.samplerate != "":
+            let samplerate = maybeParseInt(opts.samplerate)
+            if samplerate.isSome() and samplerate.get() in Positive:
+                cfg.samplerate = samplerate.get()
             else:
-                app.writeErr "Error: invalid song index\n"
-                return true
-        of "o", "output":
-            config.wavConfig.filename = val
-        of "r", "samplerate":
-            let samplerate = maybeParseInt(val, 1..int.high)
-            if samplerate.isSome():
-                config.wavConfig.samplerate = samplerate.get()
-            else:
-                app.writeErr "Error: invalid samplerate\n"
-                return true
-        of "c", "channels":
-            let channels = val.split(',')
-            if channels.len > 4:
-                app.writeErr "Error: too many channels\n"
-                return true
-            var channelset: set[ChannelId]
-            for ch in channels:
-                let num = maybeParseInt(ch, 1..4)
-                if num.isNone():
-                    app.writeErr "Error: invalid channel number\n"
-                    return true
-                channelset.incl(ChannelId(num.get()-1))
-            config.wavConfig.channels = channelset
-        of "separate":
-            config.wavSeparate = true
+                optError("-r,--samplerate: parameter must be a positive number")
+
+        block:
+            var channels: ChannelSet
+            if opts.ch1:
+                channels.incl(ch1)
+            if opts.ch2:
+                channels.incl(ch2)
+            if opts.ch3:
+                channels.incl(ch3)
+            if opts.ch4:
+                channels.incl(ch4)
+            if channels.len > 0:
+                cfg.channels = channels
+        
+        # if --silent and --verbose are both present, prefer --silent
+        if opts.silent:
+            cfg.verb = verbSilent
+        elif opts.verbose:
+            cfg.verb = verbVerbose
+
+        # --all takes precedence over --song and --song-range
+        if opts.all:
+            cfg.songs = SongSelection.init()
         else:
-            app.writeErr unrecognizedOption(key)
-            return true
-
-proc init*(tbc: var Tbc, cmd = ""): ExitCodes =
-    var p = initOptParser(
-        cmd,
-        shortNoVal = {'h', 'v'},
-        longNoVal = @["help", "version", "separate"]
-    )
-    var argCount = 0
-    for kind, key, val in p.getopt():
-        case p.kind:
-        of cmdEnd:
-            break
-        of cmdArgument:
-            case argCount:
-            of 0:
-                for sub, name in subcommandNames.pairs:
-                    if name.cmpIgnoreCase(key) == 0:
-                        tbc.subcmd = some(sub)
-                        tbc.subcmdConfig = SubCommandConfig.init(sub)
-                        break
-                if tbc.subcmd.isNone():
-                    tbc.writeErr &"Error: invalid command '{key}'\n"
-                    return exitBadArguments
-            of 1:
-                tbc.modulePath = key
-            else:
-                tbc.writeErr "Error: too many arguments given\n"
-                return exitBadArguments
-            inc argCount
-        of cmdShortOption, cmdLongOption:
-            case key:
-            of "help", "h":
-                tbc.shortCircuit = shortHelp
-                break
-            of "version", "v":
-                tbc.shortCircuit = shortVersion
-                break
-            else:
-                if tbc.subcmd.isSome():
-                    if parseSubcmdArg(tbc, key, val):
-                        return exitBadArguments
+            let songIndexBounds = 0..(input.songs.len.int - 1)
+            
+            for param in opts.song:
+                let parsed = maybeParseInt(param)
+                if parsed.isSome():
+                    if parsed.get() in songIndexBounds:
+                        cfg.songs.incl(parsed.get().ByteIndex)
+                    else:
+                        optError(&"-s,--song: module does not have a song with index { parsed.get() }")
                 else:
-                    tbc.writeErr &"Error: command required before option: '{key}'\n"
-                    return exitBadArguments
-
-    if tbc.shortCircuit == shortNone and argCount != 2:
-        tbc.writeErr "Error: not enough arguments given\n"
-        tbc.writeErr "Usage: tbc <command> <module> [options]\n"
-        return exitBadArguments
-
-    result = exitSuccess
-
-
-
-when isMainModule:
-    import libtrackerboy/[io, version]
-    import std/exitprocs
-
-    const subcommandDesc: array[SubCommand, string] = [
-            "Exports a song to a WAV file"
-        ]
-
-    func generateHelpPage(sub: SubCommand): string {.compileTime.} =
-        result = "\nUsage:\n    tbc " & subcommandNames[sub] &
-                " <module> [options]\n\nCommand options:\n"
-        case sub:
-        of scWav:
-            result.add("""
-        -o, --output        Specify the output file name
-        -i, --song          Select the song index to export (default is 0)
-        -s, --samplerate    Specify the output samplerate (default is 44100)
-        -c, --channels      Only export the specified channels, as a comma speparated list of numbers (default is 1,2,3,4)
-        --separate          Export each channel as a separate file
-            """)
-
-    func generateHelpPages(): array[SubCommand, string] {.compileTime.} =
-        for sub, page in result.mpairs:
-            page = generateHelpPage(sub)
-
-    const
-        helpPages = generateHelpPages()
-        helpMain = block:
-            var result = """
-
-Command line frontend for libtrackerboy. Converts a trackerboy module to
-various formats.
-
-Usage:
-    tbc <command> <module> [options]
-
-Command:
-"""
-            for sub in SubCommand:
-                result.add("    ")
-                result.add(subcommandNames[sub])
-                result.add("    ")
-                result.add(subcommandDesc[sub])
-                result.add("\n")
-            result.add("\nGeneral options:\n")
-            result.add("""
-    -h, --help      Show help information and exit
-    -v, --version   Show version information and exit
-""")
-            result.add("\nPass -h with the command for more help")
-            result
-
-    proc showVersion() =
-        echo &"Trackerboy compiler v{NimblePkgVersion} [libtrackerboy v{currentVersion}]"
-
-    proc showHelp(sub: Option[SubCommand]) =
-        showVersion()
-        if sub.isSome():
-            echo helpPages[sub.get()]
-        else:
-            echo helpMain
-
-    func toExitCode(b: bool): ExitCodes =
-        if b: exitSuccess else: exitFailure
-
-    proc wav(tbc: var Tbc, module: var Module): ExitCodes =
-        proc updateFilename(config: var WavConfig, module: Module) =
-            if config.filename.len == 0:
-                discard
-        tbc.subcmdConfig.wavConfig.updateFilename(module)
-        if tbc.subcmdConfig.wavSeparate:
-            for batch in batched(tbc.subcmdConfig.wavConfig):
-                if not module.exportWav(batch):
-                    return exitFailure
-            result = exitSuccess
-        else:
-            result = module.exportWav(tbc.subcmdConfig.wavConfig).toExitCode
-
-    proc open(tbc: var Tbc, module: var Module): ExitCodes =
-        # open the module
-        var module = Module.init()
-        try:
-            let strm = openFileStream(tbc.modulePath)
-            let error = module.deserialize(strm)
-            if error != frNone:
-                stderr.write &"Error: could not read module: {error}\n"
-                return exitModuleError
-        except:
-            let errmsg = getCurrentExceptionMsg()
-            stderr.write &"Error: could not open '{tbc.modulePath}': {errmsg}\n"
-            return exitFileError
-
-    proc main(): ExitCodes =
-        template errCheck(exitcode: ExitCodes): untyped =
-            block:
-                let code = exitcode
-                if code != exitSuccess:
-                    return code
-
-        # process arguments
-        var tbc: Tbc
-        errCheck(tbc.init())
-
-        case tbc.shortCircuit:
-        of shortNone:
-            discard
-        of shortHelp:
-            showHelp(tbc.subcmd)
-            return exitSuccess
-        of shortVersion:
-            showVersion()
-            return exitSuccess
-
-        # load module
-        var module = Module.init()
-        errCheck(tbc.open(module))
-
-        # dispatch
-        case tbc.subcmd.get():
-        of scWav:
-            wav(tbc, module)
+                    optError("-s,--song: parameter must be a number")
+        
+        (cfg, failed) # result of the block
     
-    setProgramResult main().ord
+    if failed:
+        return exitBadArguments
+    
+    # dispatch
+    result = if dispatch(format, input, config): exitFailure else: exitSuccess
+
+
+setProgramResult( main().ord )

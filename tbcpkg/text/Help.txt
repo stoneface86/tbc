@@ -1,0 +1,39 @@
+
+tbc - TrackerBoy Compiler
+
+Command line frontend for libtrackerboy, converts TrackerBoy modules to various
+formats.
+
+Usage:
+  `Usage`
+  tbc --version
+  tbc -h|--help
+
+Arguments:
+  input     Path to the input TrackerBoy module file (*.tbm).
+  format    Output format to convert <input> to. See below for a
+            list of available formats or use the --formats option.
+
+`FormatsHelp`
+
+Options:
+  --version             Show version information and exit.
+  --formats             Shows available formats and exit.
+  -h, --help            Show this help information and exit.
+  --silent              Disables warning information during compilation.
+  --verbose             Shows extra information when compiling.
+  -r, --samplerate=hz   Specify the output samplerate, in Hz. Default is 44100.
+  -l, --loops=<num>     Number of times to loop the song in the output.
+  -t, --duration=<time> Amount of time in mm:ss of each song to generate.
+  -1, --ch1             Enables CH1. Enabled by default.
+  -2, --ch2             Enables CH2. Enabled by default.
+  -3, --ch3             Enables CH3. Enabled by default.
+  -4, --ch4             Enables CH4. Enabled by default.
+  -a, --all             Export all songs. This is the default for most formats.
+  -s, --song=index      Adds the song via the given index to export. This option
+                        can be present multiple times.
+  -o, --out=path        Path to the output file or directory. Can be omitted to
+                        use a path based on <input>.
+
+By default all channels are enabled. To override this behavior, specify one or
+more of the --ch* flags, ie "-12" will enable CH1 and CH2 only in the output.
