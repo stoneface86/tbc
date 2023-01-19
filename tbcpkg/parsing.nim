@@ -12,7 +12,7 @@ func maybeParseDuration*(str: string): int =
     # the string could not be parsed.
     #
     var minutes = true
-    for word in str.split(':'):
+    for word in str.split(':', 1):
         let parsed = maybeParseInt(word)
         if parsed.isNone() or parsed.get() < 0:
             return -1

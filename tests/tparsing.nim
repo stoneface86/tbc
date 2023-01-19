@@ -11,6 +11,7 @@ test "maybeParseDuration":
         maybeParseDuration("2:100") == -1
         maybeParseDuration("0:0") == 0
         maybeParseDuration("0:59") == 59
+        maybeParseDuration("1:23:34") == -1
 
 test "maybeParseInt":
     check:
