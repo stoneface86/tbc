@@ -1,0 +1,36 @@
+
+name: '[push] [main] Build'
+on:
+  push:
+    branches:
+      - main
+    tags-ignore: '**'
+    paths:
+      - 'tbcpkg/**'
+      - 'tests/**'
+      - 'tbc.nim'
+      - 'tbc.nimble'
+      
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        nim-version: ['stable', 'devel']
+    steps:
+
+      - uses: actions/checkout@v3
+      
+      - uses: jiro4989/setup-nim-action@v1
+        with:
+          nim-version: ${{ matrix.nim-version }}
+
+      - name: check
+        run: nimble check
+
+      - name: test
+        run: |
+          nimble tester
+          bin/tester
