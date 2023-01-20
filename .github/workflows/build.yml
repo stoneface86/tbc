@@ -16,17 +16,13 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        nim-version: ['stable', 'devel']
     steps:
 
       - uses: actions/checkout@v3
       
       - uses: jiro4989/setup-nim-action@v1
         with:
-          nim-version: ${{ matrix.nim-version }}
+          nim-version: stable
 
       - name: refresh
         run: nimble refresh
