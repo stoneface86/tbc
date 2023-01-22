@@ -23,4 +23,3 @@ func maybeParseDuration*(str: string): int =
             if parsed.get() notin 0..59:
                 return -1
             result += parsed.get()
-            break

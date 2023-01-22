@@ -33,5 +33,12 @@ iterator items*(sel: SongSelection): ByteIndex =
     for id in sel.idmap:
         yield id.ByteIndex
 
+func len*(sel: SongSelection): int =
+    sel.idmap.card
+
+func first*(sel: SongSelection): ByteIndex =
+    for id in sel.idmap:
+        return id
+
 template contains*(T: typedesc[range], val: SomeOrdinal): bool =
     contains(T.low .. T.high, val)

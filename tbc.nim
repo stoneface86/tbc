@@ -134,10 +134,10 @@ proc main(): ExitCode =
             cfg.verb = verbVerbose
 
         # --all takes precedence over --song and --song-range
+        let songIndexBounds = 0..(input.songs.len.int - 1)
         if opts.all:
-            cfg.songs = SongSelection.init()
+            cfg.songs.incl(songIndexBounds.a.ByteIndex .. songIndexBounds.b.ByteIndex)
         else:
-            let songIndexBounds = 0..(input.songs.len.int - 1)
             
             for param in opts.song:
                 let parsed = maybeParseInt(param)
@@ -161,7 +161,7 @@ proc main(): ExitCode =
             if duration > 0:
                 cfg.duration = Duration(kind: dkSeconds, amount: duration)
             else:
-                optError("-t,--duration: parameter must be in format minutes:seconds or minutes and cannot be 0")
+                optError("-t,--duration: parameter must be in format minutes[:seconds] and cannot be 0")
         
         (cfg, failed) # result of the block
     

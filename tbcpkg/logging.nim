@@ -9,14 +9,18 @@ const
     WarnPrefix = "Warning: "
     ErrorPrefix = "Error: "
 
-proc info*(verb: Verbosity, msg: string) =
+template info*(verb: Verbosity, msg: string) =
     if verb == verbVerbose:
         echo msg
 
-proc warn*(verb: Verbosity, msg: string) =
+proc warnImpl(msg: string) =
+    stderr.write(WarnPrefix)
+    stderr.writeLine(msg)
+
+template warn*(verb: Verbosity, msg: string) =
+    mixin warnImpl
     if verb != verbSilent:
-        stderr.write(WarnPrefix)
-        stderr.writeLine(msg)
+        warnImpl
 
 proc error*(msg: string) =
     # Does not take a verbosity argument since errors are always logged.
@@ -26,6 +30,6 @@ proc error*(msg: string) =
 template withLogging*(verb: Verbosity, body: untyped): untyped =
     # convenience template that provides info and warn shortcut overloads with
     # the verb parameter already passed
-    template info(msg: string) = info(verb, msg)
-    template warn(msg: string) = warn(verb, msg)
+    template info(msg: string) {.used.} = info(verb, msg)
+    template warn(msg: string) {.used.} = warn(verb, msg)
     body
