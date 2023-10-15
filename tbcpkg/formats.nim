@@ -7,25 +7,25 @@ import formats/[wav]
 import libtrackerboy/data
 
 type
-    OutputFormat* = enum
-        ofWav
+  OutputFormat* = enum
+    ofWav
 
 const
-    OutputFormatNames*: array[OutputFormat, string] = [
-        "wav"
-    ]
+  OutputFormatNames*: array[OutputFormat, string] = [
+    "wav"
+  ]
 
 template `$`*(format: OutputFormat): string =
-    OutputFormatNames[format]
+  OutputFormatNames[format]
 
 func parseOutputFormat*(str: string): Option[OutputFormat] =
-    case str
-    of $ofWav:
-        some(ofWav)
-    else:
-        none(OutputFormat)
+  case str
+  of $ofWav:
+    some(ofWav)
+  else:
+    none(OutputFormat)
 
 proc dispatch*(format: OutputFormat, module: Module, config: Config): bool =
-    case format
-    of ofWav:
-        onWav(module, config)
+  case format
+  of ofWav:
+    onWav(module, config)

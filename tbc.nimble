@@ -16,8 +16,8 @@ requires "argparse >= 4.0.0"
 requires "https://github.com/stoneface86/libtrackerboy#v0.7.1"
 
 task docs, "Generates documentation":
-    exec "nim rst2html --hints:off --index:off --outdir:htmldocs docs/tbc.rst"
+  exec "nim rst2html --hints:off --index:off --outdir:htmldocs docs/tbc.rst"
 
 task tester, "Builds the unit tester":
-    switch("outDir", binDir)
-    setCommand("c", "tests/tester.nim")
+  switch("outDir", binDir)
+  setCommand("c", "tests/tester.nim")
