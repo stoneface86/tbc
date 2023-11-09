@@ -4,14 +4,14 @@ import std/unittest
 
 test "maybeParseDuration":
   check:
-    maybeParseDuration("1:30") == 90
-    maybeParseDuration("3") == 180
-    maybeParseDuration("foo") == -1
-    maybeParseDuration("2:bar") == -1
-    maybeParseDuration("2:100") == -1
-    maybeParseDuration("0:0") == 0
-    maybeParseDuration("0:59") == 59
-    maybeParseDuration("1:23:34") == -1
+    maybeParseDuration("1:30") == some(initDuration(minutes = 1, seconds = 30))
+    maybeParseDuration("3") == some(initDuration(minutes = 3))
+    maybeParseDuration("foo").isNone()
+    maybeParseDuration("2:bar").isNone()
+    maybeParseDuration("2:100").isNone()
+    maybeParseDuration("0:0") == some(DurationZero)
+    maybeParseDuration("0:59") == some(initDuration(seconds = 59))
+    maybeParseDuration("1:23:34").isNone()
 
 test "maybeParseInt":
   check:

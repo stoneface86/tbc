@@ -20,6 +20,8 @@ proc onWav*(module: Module, config: Config): bool =
     for item in songBatch:
       wavConfig.filename = item.dest
       wavConfig.song = item.song
-      if not module.exportWav(wavConfig):
+      try:
+        module.exportWav(wavConfig)
+      except IOError:
         error(&"failed to export song #{item.song} to '{item.dest}'")
         return true

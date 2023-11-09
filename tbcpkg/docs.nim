@@ -4,6 +4,8 @@ import std/[os, strformat]
 
 import libtrackerboy/version
 
+import version as tbcVersion
+
 template slurpText(filename: string): string =
   slurp("text" / filename).fmt('`', '`')
 
@@ -12,7 +14,5 @@ const
   FormatsHelp* = slurpText("FormatsHelp.txt")
 
   Help* = slurpText("Help.txt")
-    
-  NimblePkgVersion* {.strdefine.} = ""
   
-  VersionStr* = &"TrackerBoy Compiler v{NimblePkgVersion} [libtrackerboy v{currentVersion}]"
+  VersionStr* = &"TrackerBoy Compiler v{TbcVersion} [libtrackerboy v{currentVersionString}]"

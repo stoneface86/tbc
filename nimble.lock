@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "packages": {
+    "libtrackerboy": {
+      "version": "0.8.3",
+      "vcsRevision": "5fab7da397eede300d78f1a6f3fc04204150a5c6",
+      "url": "https://github.com/stoneface86/libtrackerboy",
+      "downloadMethod": "git",
+      "dependencies": [],
+      "checksums": {
+        "sha1": "2e68819492b14e5c28065f9ae0d34ac2855bb146"
+      }
+    },
+    "argparse": {
+      "version": "4.0.1",
+      "vcsRevision": "98c7c99bfbcaae750ac515a6fd603f85ed68668f",
+      "url": "https://github.com/iffy/nim-argparse",
+      "downloadMethod": "git",
+      "dependencies": [],
+      "checksums": {
+        "sha1": "e9c2ebe3f74b1dfc4df773686ae6dab7638a8662"
+      }
+    }
+  },
+  "tasks": {}
+}

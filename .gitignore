@@ -1,2 +1,6 @@
 bin/
 htmldocs/
+nim.cfg
+nimble.develop
+nimble.paths
+*.wav

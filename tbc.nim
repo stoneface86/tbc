@@ -153,13 +153,13 @@ proc main(): ExitCode =
     if opts.loops != "":
       let parsed = maybeParseInt(opts.loops)
       if parsed.isSome() and parsed.get() > 0:
-        cfg.duration = Duration(kind: dkLoops, amount: parsed.get())
+        cfg.duration = songDuration(parsed.get())
       else:
         optError("-l,--loops: parameter must be a positive number")
     elif opts.duration != "":
       let duration = maybeParseDuration(opts.duration)
-      if duration > 0:
-        cfg.duration = Duration(kind: dkSeconds, amount: duration)
+      if duration.isSome():
+        cfg.duration = songDuration(duration.get())
       else:
         optError("-t,--duration: parameter must be in format minutes[:seconds] and cannot be 0")
     

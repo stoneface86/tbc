@@ -10,6 +10,7 @@ on:
       - 'tests/**'
       - 'tbc.nim'
       - 'tbc.nimble'
+      - 'nimble.lock'
   workflow_dispatch:
       
 
@@ -19,21 +20,30 @@ jobs:
     steps:
 
       - uses: actions/checkout@v3
+
+      - name: Cache nimble
+        uses: actions/cache@v3
+        with:
+          path: ~/.nimble
+          key: ${{ runner.os }}-nimble-${{ hashFiles('nimble.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-nimble-
       
       - uses: jiro4989/setup-nim-action@v1
         with:
           nim-version: stable
 
-      - name: refresh
-        run: nimble refresh
+      - name: install dependencies
+        run: nimble install -y -d
 
       - name: check
         run: nimble check
 
+      - name: setup
+        run: nimble setup
+      
       - name: build
         run: nimble build
 
       - name: test
-        run: |
-          nimble tester
-          bin/tester
+        run: nim test

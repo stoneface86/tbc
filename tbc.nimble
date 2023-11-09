@@ -1,8 +1,8 @@
-import std/[os, strformat, strutils]
+import tbcpkg/version as mTbcVersion
 
 # Package
 
-version       = "0.0.1"
+version       = TbcVersion
 author        = "stoneface"
 description   = "Trackerboy Compiler, command line front end for libtrackerboy"
 license       = "MIT"
@@ -13,11 +13,6 @@ bin           = @["tbc"]
 
 requires "nim >= 1.6.0"
 requires "argparse >= 4.0.0"
-requires "https://github.com/stoneface86/libtrackerboy#v0.7.1"
+requires "https://github.com/stoneface86/libtrackerboy#v0.8.3"
 
-task docs, "Generates documentation":
-  exec "nim rst2html --hints:off --index:off --outdir:htmldocs docs/tbc.rst"
-
-task tester, "Builds the unit tester":
-  switch("outDir", binDir)
-  setCommand("c", "tests/tester.nim")
+include "tasks.nims"
